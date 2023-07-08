@@ -1,9 +1,15 @@
 import Foundation
 
-public protocol ErrorHandling {
+public protocol ErrorHandlerContaining {
+    func errorHandler() -> ErrorHandling
+}
+
+public protocol ErrorHandling: ErrorHandlerContaining {
     func handle(_ error: Error)
 }
 
-public protocol ErrorHandlerContaining {
-    func errorHandler() -> ErrorHandling
+public extension ErrorHandling {
+    func errorHandler() -> ErrorHandling {
+        return self
+    }
 }

@@ -1,9 +1,9 @@
 import XCTest
-@testable import Budgie
+@testable import Parakeet
 
 final class ParakeetTests: XCTestCase {
     func testExample() throws {
-        // XCTest Documenation
+        // XCTest Documentation
         // https://developer.apple.com/documentation/xctest
 
         // Defining Test Cases and Test Methods
