@@ -9,6 +9,14 @@ public extension ActionContextContaining {
 public typealias ActionContextContainingErrorHandling = ActionContextContaining & ErrorHandlerContaining
 
 public extension ActionContextContaining where Self: ErrorHandlerContaining {
+    func perform<Action: Actionable>(_ action: Action) async where Action.Context == Self.Context  {
+        do {
+            try await action.act(withContext: createContext())
+        } catch {
+            errorHandler().handle(error)
+        }
+    }
+
     func perform<Action: Actionable>(_ action: Action) where Action.Context == Self.Context {
         Task {
             do {
