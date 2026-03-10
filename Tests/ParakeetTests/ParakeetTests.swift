@@ -1,13 +1,77 @@
-import XCTest
-
+import Testing
+import Foundation
 @testable import Parakeet
 
-final class ParakeetTests: XCTestCase {
-  func testExample() throws {
-    // XCTest Documentation
-    // https://developer.apple.com/documentation/xctest
+@Suite("Parakeet Tests")
+struct ParakeetTests {
+  @Test func simpleAction() async throws {
+    let context = TestContext()
+    let action = TestAction()
+    
+    try await action.act(withContext: context)
+    #expect(context.didAct)
+  }
+  
+  @Test func performActionInContext() async throws {
+    let provider = TestProvider()
+    let action = TestAction()
+    
+    try await provider.perform(action)
+    #expect(provider.context.didAct)
+  }
+  
+  @Test func performActionWithErrorHandler() async {
+    let provider = TestProvider()
+    let action = TestAction()
+    
+    await provider.perform(action)
+    #expect(provider.context.didAct)
+  }
+}
 
-    // Defining Test Cases and Test Methods
-    // https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods
+final class TestContext: @unchecked Sendable {
+  private let lock = NSLock()
+  private var _didAct = false
+  
+  var didAct: Bool {
+    get {
+      lock.lock()
+      defer { lock.unlock() }
+      return _didAct
+    }
+    set {
+      lock.lock()
+      defer { lock.unlock() }
+      _didAct = newValue
+    }
+  }
+}
+
+struct TestAction: Actionable {
+  typealias Context = TestContext
+  
+  func act(withContext context: TestContext) async throws {
+    context.didAct = true
+  }
+}
+
+final class TestProvider: ActionContextContaining, ErrorHandlerContaining, @unchecked Sendable {
+  let context = TestContext()
+  let errorLogger = TestErrorHandler()
+  
+  func createContext() -> TestContext {
+    return context
+  }
+  
+  func errorHandler() -> any ErrorHandling {
+    return errorLogger
+  }
+}
+
+final class TestErrorHandler: ErrorHandling, @unchecked Sendable {
+  var lastError: (any Error)?
+  
+  func handle(_ error: any Error) {
+    lastError = error
   }
 }

@@ -1,7 +1,7 @@
 import Foundation
 
-public protocol ActionContextContaining {
-  associatedtype Context
+public protocol ActionContextContaining: Sendable {
+  associatedtype Context: Sendable
 
   func createContext() -> Context
 }
