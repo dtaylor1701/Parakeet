@@ -20,28 +20,29 @@ let package = Package(
   ],
   dependencies: [
     // Depend on the Swift 5.9 release of SwiftSyntax
-    // .package(url: "https://github.com/apple/swift-syntax.git", from: "509.0.0")
+    .package(url: "https://github.com/apple/swift-syntax.git", from: "600.0.0")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
     // Targets can depend on other targets in this package and products from dependencies.
-    // .macro(
-    //     name: "ParakeetMacros",
-    //     dependencies: [
-    //         .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-    //         .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
-    //     ]
-    // ),
-    // .target(
-    //   name: "Parakeet",
-    //   dependencies: ["ParakeetMacros"]),
+    .macro(
+        name: "ParakeetMacros",
+        dependencies: [
+            .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+            .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
+        ]
+    ),
     .target(
-      name: "Parakeet"),
+      name: "Parakeet",
+      dependencies: ["ParakeetMacros"]),
     .testTarget(
       name: "ParakeetTests",
       dependencies: ["Parakeet"]),
-    // .testTarget(
-    //   name: "ParakeetMacrosTests",
-    //   dependencies: ["ParakeetMacros"]),
+    .testTarget(
+      name: "ParakeetMacrosTests",
+      dependencies: [
+        "ParakeetMacros",
+        .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax")
+      ]),
   ]
 )

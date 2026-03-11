@@ -1,46 +1,67 @@
 import Foundation
-import Parakeet
 import ParakeetMacros
 import SwiftSyntax
 import SwiftSyntaxMacroExpansion
 import SwiftSyntaxMacros
+import SwiftSyntaxMacrosTestSupport
 import XCTest
 
-class ActionMacroTest: XCTestCase {
+let testMacros: [String: Macro.Type] = [
+    "Action": ActionMacro.self
+]
+
+final class ActionMacroTest: XCTestCase {
   func testActionMacro() {
-    let source: SourceFileSyntax =
+    assertMacroExpansion(
       """
       @Action
-      struct MyAction {
-        let firstProperty: String
-        let secondProperty: String
-      }
-      """
-
-    let file = BasicMacroExpansionContext.KnownSourceFile(
-      moduleName: "MyModule",
-      fullFilePath: "test.swift"
-    )
-
-    let context = BasicMacroExpansionContext(sourceFiles: [source: file])
-
-    let transformedSF = source.expand(
-      macros: ["Action": ActionMacro.self],
-      in: context
-    )
-
-    let expectedDescription =
-      """
-      struct MyAction: Actionable {
-        let firstProperty: String
-        let secondProperty: String
-      }
-
-      extension MyAction: Actionable {
-            @Action func myAction() {}
+      struct CreateUserAction {
+        let id: UUID
+        let name: String
+        
+        var computedProperty: String {
+          name
         }
-      """
+      }
+      """,
+      expandedSource: """
+      struct CreateUserAction {
+        let id: UUID
+        let name: String
+        
+        var computedProperty: String {
+          name
+        }
+      }
 
-    XCTAssertEqual(transformedSF.description, expectedDescription)
+      extension CreateUserAction: Actionable {
+          static func createUser(id: UUID, name: String) -> CreateUserAction {
+              CreateUserAction(id: id, name: name)
+          }
+      }
+      """,
+      macros: testMacros
+    )
   }
+  
+  func testSimpleActionMacro() {
+      assertMacroExpansion(
+        """
+        @Action
+        struct SimpleAction {
+        }
+        """,
+        expandedSource: """
+        struct SimpleAction {
+        }
+
+        extension SimpleAction: Actionable {
+            static func simple() -> SimpleAction {
+                SimpleAction()
+            }
+        }
+        """,
+        macros: testMacros
+      )
+    }
 }

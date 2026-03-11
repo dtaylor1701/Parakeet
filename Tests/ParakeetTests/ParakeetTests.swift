@@ -27,11 +27,27 @@ struct ParakeetTests {
     await provider.perform(action)
     #expect(provider.context.didAct)
   }
+
+  @Test func actionWithMacro() async throws {
+    let provider = TestProvider()
+    let action = MacroAction(message: "Hello")
+    
+    try await provider.perform(action)
+    #expect(provider.context.lastMessage == "Hello")
+  }
+  
+  @Test func actionWithMacroStaticFactory() async throws {
+    let provider = TestProvider()
+    
+    try await provider.perform(MacroAction.macro(message: "Static"))
+    #expect(provider.context.lastMessage == "Static")
+  }
 }
 
 final class TestContext: @unchecked Sendable {
   private let lock = NSLock()
   private var _didAct = false
+  private var _lastMessage: String?
   
   var didAct: Bool {
     get {
@@ -44,6 +60,29 @@ final class TestContext: @unchecked Sendable {
       defer { lock.unlock() }
       _didAct = newValue
     }
+  }
+  
+  var lastMessage: String? {
+    get {
+      lock.lock()
+      defer { lock.unlock() }
+      return _lastMessage
+    }
+    set {
+      lock.lock()
+      defer { lock.unlock() }
+      _lastMessage = newValue
+    }
+  }
+}
+
+@Action
+struct MacroAction {
+  typealias Context = TestContext
+  let message: String
+  
+  func act(withContext context: TestContext) async throws {
+    context.lastMessage = message
   }
 }
 
