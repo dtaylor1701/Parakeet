@@ -1,17 +1,14 @@
-import Foundation
 import ParakeetMacros
-import SwiftSyntax
-import SwiftSyntaxMacroExpansion
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
-import XCTest
+import Testing
 
-let testMacros: [String: Macro.Type] = [
+@Suite struct ActionMacroTests {
+  let testMacros: [String: Macro.Type] = [
     "Action": ActionMacro.self
-]
+  ]
 
-final class ActionMacroTest: XCTestCase {
-  func testActionMacro() {
+  @Test func actionMacro() {
     assertMacroExpansion(
       """
       @Action
@@ -25,33 +22,33 @@ final class ActionMacroTest: XCTestCase {
       }
       """,
       expandedSource: """
-      struct CreateUserAction {
-        let id: UUID
-        let name: String
-        
-        var computedProperty: String {
-          name
-        }
-      }
-
-      extension CreateUserAction: Actionable {
-          static func createUser(id: UUID, name: String) -> CreateUserAction {
-              CreateUserAction(id: id, name: name)
+        struct CreateUserAction {
+          let id: UUID
+          let name: String
+          
+          var computedProperty: String {
+            name
           }
-      }
-      """,
+        }
+
+        extension CreateUserAction: Actionable {
+            static func createUser(id: UUID, name: String) -> CreateUserAction {
+                CreateUserAction(id: id, name: name)
+            }
+        }
+        """,
       macros: testMacros
     )
   }
-  
-  func testSimpleActionMacro() {
-      assertMacroExpansion(
-        """
-        @Action
-        struct SimpleAction {
-        }
-        """,
-        expandedSource: """
+
+  @Test func simpleActionMacro() {
+    assertMacroExpansion(
+      """
+      @Action
+      struct SimpleAction {
+      }
+      """,
+      expandedSource: """
         struct SimpleAction {
         }
 
@@ -61,7 +58,7 @@ final class ActionMacroTest: XCTestCase {
             }
         }
         """,
-        macros: testMacros
-      )
-    }
+      macros: testMacros
+    )
+  }
 }
