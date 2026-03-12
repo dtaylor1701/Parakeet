@@ -38,19 +38,62 @@ public struct ActionMacro: ExtensionMacro {
     }
     methodName = methodName.prefix(1).lowercased() + methodName.dropFirst()
     
+    // Find the Context type from act(withContext:) or typealias Context
+    var contextType: String? = nil
+    
+    // Check for act(withContext:)
+    for member in declaration.memberBlock.members {
+      if let function = member.decl.as(FunctionDeclSyntax.self),
+         function.name.text == "act" {
+        for parameter in function.signature.parameterClause.parameters {
+          if parameter.firstName.text == "withContext" {
+            contextType = parameter.type.trimmedDescription
+            break
+          }
+        }
+      }
+      if contextType != nil { break }
+    }
+    
+    // Check for typealias Context
+    if contextType == nil {
+      for member in declaration.memberBlock.members {
+        if let typeAlias = member.decl.as(TypeAliasDeclSyntax.self),
+           typeAlias.name.text == "Context" {
+          contextType = typeAlias.underlyingType.trimmedDescription
+          break
+        }
+      }
+    }
+    
     // Construct the parameters and initializer arguments
     let parameters = properties.map { "\($0.identifier): \($0.type)" }.joined(separator: ", ")
     let arguments = properties.map { "\($0.identifier): \($0.identifier)" }.joined(separator: ", ")
     
-    return [
-      try ExtensionDeclSyntax(
-        """
-        extension \(type): Actionable {
-            static func \(raw: methodName)(\(raw: parameters)) -> \(type) {
-                \(type)(\(raw: arguments))
-            }
-        }
-        """),
-    ]
+    var extensions: [ExtensionDeclSyntax] = []
+    
+    // 1. Add conformance to Actionable and factory method on the type itself
+    let contextAlias = contextType.map { "typealias Context = \($0)" } ?? ""
+    extensions.append(try ExtensionDeclSyntax(
+      """
+      extension \(type): Actionable {
+          \(raw: contextAlias)
+          static func \(raw: methodName)(\(raw: parameters)) -> \(type) {
+              \(type).init(\(raw: arguments))
+          }
+      }
+      """))
+    
+    // 2. Add factory method on Actionable constrained to this type to enable leading-dot syntax
+    extensions.append(try ExtensionDeclSyntax(
+      """
+      extension Actionable where Self == \(type) {
+          static func \(raw: methodName)(\(raw: parameters)) -> \(type) {
+              \(type).\(raw: methodName)(\(raw: arguments))
+          }
+      }
+      """))
+    
+    return extensions
   }
 }

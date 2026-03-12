@@ -20,9 +20,9 @@ import Foundation
 public macro Action() = #externalMacro(module: "ParakeetMacros", type: "ActionMacro")
 
 /// A protocol that defines a unit of work that can be executed asynchronously.
-public protocol Actionable: Sendable {
+public protocol Actionable {
   /// The type of context required to execute the action.
-  associatedtype Context: Sendable
+  associatedtype Context
 
   /// Executes the action with the provided context.
   /// - Parameter context: The context containing the dependencies needed for the action.

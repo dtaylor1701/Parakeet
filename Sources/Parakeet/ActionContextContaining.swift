@@ -15,9 +15,9 @@ import Foundation
 ///     }
 /// }
 /// ```
-public protocol ActionContextContaining: Sendable {
+public protocol ActionContextContaining {
   /// The type of context provided by this container.
-  associatedtype Context: Sendable
+  associatedtype Context
 
   /// Creates and returns a new context for executing an action.
   func createContext() -> Context
