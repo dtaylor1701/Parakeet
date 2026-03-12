@@ -60,7 +60,7 @@ public struct ActionMacro: ExtensionMacro {
       for member in declaration.memberBlock.members {
         if let typeAlias = member.decl.as(TypeAliasDeclSyntax.self),
            typeAlias.name.text == "Context" {
-          contextType = typeAlias.underlyingType.trimmedDescription
+          contextType = typeAlias.initializer.value.trimmedDescription
           break
         }
       }
@@ -72,24 +72,23 @@ public struct ActionMacro: ExtensionMacro {
     
     var extensions: [ExtensionDeclSyntax] = []
     
+    // Check if the type already conforms to Actionable or declares Context
+    let hasContext = declaration.memberBlock.members.contains { member in
+      if let typeAlias = member.decl.as(TypeAliasDeclSyntax.self),
+         typeAlias.name.text == "Context" {
+        return true
+      }
+      return false
+    }
+
     // 1. Add conformance to Actionable and factory method on the type itself
-    let contextAlias = contextType.map { "typealias Context = \($0)" } ?? ""
+    let contextAlias = (contextType != nil && !hasContext) ? "typealias Context = \(contextType!)" : ""
     extensions.append(try ExtensionDeclSyntax(
       """
       extension \(type): Actionable {
           \(raw: contextAlias)
           static func \(raw: methodName)(\(raw: parameters)) -> \(type) {
               \(type).init(\(raw: arguments))
-          }
-      }
-      """))
-    
-    // 2. Add factory method on Actionable constrained to this type to enable leading-dot syntax
-    extensions.append(try ExtensionDeclSyntax(
-      """
-      extension Actionable where Self == \(type) {
-          static func \(raw: methodName)(\(raw: parameters)) -> \(type) {
-              \(type).\(raw: methodName)(\(raw: arguments))
           }
       }
       """))
