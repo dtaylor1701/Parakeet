@@ -16,7 +16,10 @@ public struct ActionMacro: ExtensionMacro {
       .compactMap { $0.decl.as(VariableDeclSyntax.self) }
       .flatMap { varDecl -> [(identifier: TokenSyntax, type: TypeSyntax)] in
         // Filter for stored properties (no accessors)
-        varDecl.bindings.compactMap { binding in
+        // Skip properties with attributes (like property wrappers)
+        guard varDecl.attributes.isEmpty else { return [] }
+        
+        return varDecl.bindings.compactMap { binding in
           guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier,
                 let type = binding.typeAnnotation?.type else {
             return nil
