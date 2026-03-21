@@ -6,7 +6,7 @@ import Testing
 @Suite("Parakeet Tests")
 struct ParakeetTests {
   @Test func simpleAction() async throws {
-    let context = TestContext()
+    let context = TestActionContext()
     let action = TestAction()
 
     try await action.act(withContext: context)
@@ -17,7 +17,7 @@ struct ParakeetTests {
     let provider = TestProvider()
     let action = TestAction()
 
-    await provider.perform(action)
+    try await provider.perform(action)
     #expect(provider.context.didAct)
   }
 
@@ -43,9 +43,24 @@ struct ParakeetTests {
     await provider.perform(MacroAction.macro(message: "Static"))
     #expect(provider.context.lastMessage == "Static")
   }
+
+  @Test func actionWithReturnValue() async throws {
+    let provider = TestProvider()
+    let action = ReturningAction()
+
+    let result = try await provider.perform(action)
+    #expect(result == "Success")
+  }
+
+  @Test func actionWithReturnValueStaticFactory() async throws {
+    let provider = TestProvider()
+
+    let result = try await provider.perform(ReturningAction.returning())
+    #expect(result == "Success")
+  }
 }
 
-final class TestContext: @unchecked Sendable {
+final class TestActionContext: @unchecked Sendable {
   private let lock = NSLock()
   private var _didAct = false
   private var _lastMessage: String?
@@ -79,36 +94,46 @@ final class TestContext: @unchecked Sendable {
 
 @Action
 struct MacroAction {
-  typealias Context = TestContext
+  typealias ActionContext = TestActionContext
   let message: String
 
-  func act(withContext context: TestContext) async throws {
+  func act(withContext context: TestActionContext) async throws {
     context.lastMessage = message
   }
 }
 
-struct TestAction: Actionable {
-  typealias Context = TestContext
+@Action
+struct ReturningAction {
+  typealias ActionContext = TestActionContext
+  typealias ActionResponse = String
 
-  func act(withContext context: TestContext) async throws {
+  func act(withContext context: TestActionContext) async throws -> String {
+    return "Success"
+  }
+}
+
+struct TestAction: Actionable {
+  typealias ActionContext = TestActionContext
+
+  func act(withContext context: TestActionContext) async throws {
     context.didAct = true
   }
 }
 
-final class TestProvider: ActionContextContaining, ErrorHandlerContaining, @unchecked Sendable {
-  let context = TestContext()
-  let errorLogger = TestErrorHandler()
+final class TestProvider: ActionContextProviding, ActionErrorHandlerProviding, @unchecked Sendable {
+  let context = TestActionContext()
+  let errorLogger = TestActionErrorHandler()
 
-  func createContext() -> TestContext {
+  func createActionContext() -> TestActionContext {
     return context
   }
 
-  func errorHandler() -> any ErrorHandling {
+  func actionErrorHandler() -> any ActionErrorHandling {
     return errorLogger
   }
 }
 
-final class TestErrorHandler: ErrorHandling, @unchecked Sendable {
+final class TestActionErrorHandler: ActionErrorHandling, @unchecked Sendable {
   var lastError: (any Error)?
 
   func handle(_ error: any Error) {

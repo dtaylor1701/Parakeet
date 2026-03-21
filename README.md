@@ -4,10 +4,11 @@ Parakeet is a Swift library designed to decouple business logic (Actions) from t
 
 ## Key Features
 
-- **Actionable Protocol**: Define tasks as independent units that require a context for execution.
-- **Context Injection**: Use `ActionContextContaining` to provide the necessary dependencies to an action at runtime.
-- **Structured Error Handling**: Centralize error management using the `ErrorHandling` and `ErrorHandlerContaining` protocols.
-- **Experimental Swift Macro**: Simplify the creation of `Actionable` types with the `@Action` macro.
+- **Actionable Protocol**: Define tasks as independent units that require a context for execution and can return results.
+- **Action Context Injection**: Use `ActionContextProviding` to provide the necessary dependencies to an action at runtime.
+- **Structured Error Handling**: Centralize error management using the `ActionErrorHandling` and `ActionErrorHandlerProviding` protocols.
+- **Swift Macro**: Simplify the creation of `Actionable` types with the `@Action` macro, including automatic static factory methods.
+- **SwiftUI Support**: Trigger actions directly from views with built-in error handling.
 
 ## Installation
 
@@ -15,107 +16,120 @@ Add Parakeet as a dependency in your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/RambleLogic/Parakeet.git", from: "1.0.0")
+    .package(url: "https://github.com/RambleLogic/Parakeet.git", from: "1.1.0")
 ]
 ```
 
 ## Core Components
 
 ### Actionable
-The `Actionable` protocol defines a unit of work. It requires a `Context` to perform its task.
+The `Actionable` protocol defines a unit of work. It requires an `ActionContext` to perform its task and can return an `ActionResponse`.
 
 ```swift
-public protocol Actionable {
-    associatedtype Context
-    func act(withContext context: Context) async throws
+public protocol Actionable: Sendable {
+    associatedtype ActionContext
+    associatedtype ActionResponse = Void
+    func act(withContext context: ActionContext) async throws -> ActionResponse
 }
 ```
 
-### ActionContextContaining
+### ActionContextProviding
 The execution environment (e.g., a ViewModel or Coordinator) conforms to this protocol to provide the context required by an action.
 
 ```swift
-public protocol ActionContextContaining {
-    associatedtype Context
-    func createContext() -> Context
+public protocol ActionContextProviding {
+    associatedtype ActionContext
+    func createActionContext() -> ActionContext
 }
 ```
 
-### ErrorHandling
+### ActionErrorHandling
 Parakeet provides a mechanism for centralized error handling, allowing the environment to handle errors thrown by actions.
 
 ```swift
-public protocol ErrorHandlerContaining {
-    func errorHandler() -> ErrorHandling
+public protocol ActionErrorHandlerProviding {
+    func actionErrorHandler() -> any ActionErrorHandling
 }
 
-public protocol ErrorHandling {
-    func handle(_ error: Error)
+public protocol ActionErrorHandling {
+    func handle(_ error: any Error)
 }
 ```
 
 ## Usage
 
-### 1. Define your Context
+### 1. Define your Action Context
 The context contains the dependencies required by your actions.
 
 ```swift
-struct MyContext {
+struct MyActionContext {
     let apiService: APIService
     let database: Database
 }
 ```
 
 ### 2. Create an Action
-Implement the `Actionable` protocol to define your business logic.
+Implement the `Actionable` protocol or use the `@Action` macro to define your business logic.
 
 ```swift
-struct FetchUserAction: Actionable {
+@Action
+struct FetchUserAction {
     let userId: String
 
-    func act(withContext context: MyContext) async throws {
-        let user = try await context.apiService.getUser(id: userId)
-        try await context.database.save(user)
+    func act(withContext context: MyActionContext) async throws -> User {
+        return try await context.apiService.getUser(id: userId)
     }
 }
 ```
 
 ### 3. Execute the Action
-Conform your execution environment to `ActionContextContaining` and use the `perform` extension methods.
+Conform your execution environment to `ActionContextProviding` and use the `perform` extension methods.
 
 ```swift
-class UserViewModel: ActionContextContaining, ErrorHandlerContaining {
-    typealias Context = MyContext
+class UserViewModel: ActionContextProviding, ActionErrorHandlerProviding {
+    typealias ActionContext = MyActionContext
     
-    private let apiService: APIService
-    private let database: Database
+    // ... dependencies ...
     
-    func createContext() -> MyContext {
-        return MyContext(apiService: apiService, database: database)
+    func createActionContext() -> MyActionContext {
+        return MyActionContext(apiService: apiService, database: database)
     }
     
-    func errorHandler() -> ErrorHandling {
-        return self // Conform to ErrorHandling to handle errors here
+    func actionErrorHandler() -> any ActionErrorHandling {
+        return self // Conform to ActionErrorHandling to handle errors here
     }
     
     func loadUser() {
-        let action = FetchUserAction(userId: "123")
-        
-        // Asynchronous execution with error handling
-        perform(action) 
+        // Asynchronous execution with automatic error handling
+        perform(FetchUserAction.fetchUser(userId: "123")) 
+    }
+}
+```
+
+### 4. SwiftUI Integration
+Trigger actions directly from your SwiftUI views.
+
+```swift
+struct MyView: View {
+    @Environment(MyActionContext.self) var context
+    
+    var body: some View {
+        Button("Refresh") {
+            perform(FetchUserAction.fetchUser(userId: "123"), withContext: context)
+        }
     }
 }
 ```
 
 ## Project Structure
 
-- `Sources/Parakeet`: Core protocols and extensions.
+- `Sources/Parakeet`: Core protocols, extensions, and SwiftUI support.
 - `Sources/ParakeetMacros`: Swift Syntax macros for simplifying `Actionable` definitions.
 - `Tests`: Comprehensive unit tests for both the core library and macros.
 
 ## Requirements
 
-- Swift 5.9+
+- Swift 6.0+
 - Foundation
 - SwiftSyntax (for macros)
 

@@ -2,23 +2,23 @@ import Foundation
 
 /// A protocol that defines a provider of an execution context for an action.
 ///
-/// Types conforming to `ActionContextContaining` (e.g., ViewModels or Coordinators)
+/// Types conforming to `ActionContextProviding` (e.g., ViewModels or Coordinators)
 /// are responsible for creating the context required by an `Actionable`.
 ///
 /// ### Example
 /// ```swift
-/// class MyViewModel: ActionContextContaining {
-///     typealias Context = MyContext
+/// class MyViewModel: ActionContextProviding {
+///     typealias ActionContext = MyContext
 ///
-///     func createContext() -> MyContext {
+///     func createActionContext() -> MyContext {
 ///         return MyContext(apiService: self.apiService)
 ///     }
 /// }
 /// ```
-public protocol ActionContextContaining {
+public protocol ActionContextProviding {
   /// The type of context provided by this container.
-  associatedtype Context
+  associatedtype ActionContext
 
   /// Creates and returns a new context for executing an action.
-  func createContext() -> Context
+  func createActionContext() -> ActionContext
 }

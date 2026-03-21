@@ -32,8 +32,9 @@ import Testing
         }
 
         extension CreateUserAction: Actionable {
+            
             static func createUser(id: UUID, name: String) -> CreateUserAction {
-                CreateUserAction(id: id, name: name)
+                CreateUserAction.init(id: id, name: name)
             }
         }
         """,
@@ -53,8 +54,9 @@ import Testing
         }
 
         extension SimpleAction: Actionable {
+            
             static func simple() -> SimpleAction {
-                SimpleAction()
+                SimpleAction.init()
             }
         }
         """,

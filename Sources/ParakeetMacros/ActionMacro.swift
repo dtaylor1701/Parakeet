@@ -38,7 +38,7 @@ public struct ActionMacro: ExtensionMacro {
     }
     methodName = methodName.prefix(1).lowercased() + methodName.dropFirst()
     
-    // Find the Context type from act(withContext:) or typealias Context
+    // Find the ActionContext type from act(withContext:) or typealias ActionContext
     var contextType: String? = nil
     
     // Check for act(withContext:)
@@ -55,11 +55,11 @@ public struct ActionMacro: ExtensionMacro {
       if contextType != nil { break }
     }
     
-    // Check for typealias Context
+    // Check for typealias ActionContext
     if contextType == nil {
       for member in declaration.memberBlock.members {
         if let typeAlias = member.decl.as(TypeAliasDeclSyntax.self),
-           typeAlias.name.text == "Context" {
+           typeAlias.name.text == "ActionContext" {
           contextType = typeAlias.initializer.value.trimmedDescription
           break
         }
@@ -72,17 +72,17 @@ public struct ActionMacro: ExtensionMacro {
     
     var extensions: [ExtensionDeclSyntax] = []
     
-    // Check if the type already conforms to Actionable or declares Context
+    // Check if the type already declares ActionContext
     let hasContext = declaration.memberBlock.members.contains { member in
       if let typeAlias = member.decl.as(TypeAliasDeclSyntax.self),
-         typeAlias.name.text == "Context" {
+         typeAlias.name.text == "ActionContext" {
         return true
       }
       return false
     }
 
     // 1. Add conformance to Actionable and factory method on the type itself
-    let contextAlias = (contextType != nil && !hasContext) ? "typealias Context = \(contextType!)" : ""
+    let contextAlias = (contextType != nil && !hasContext) ? "typealias ActionContext = \(contextType!)" : ""
     extensions.append(try ExtensionDeclSyntax(
       """
       extension \(type): Actionable {

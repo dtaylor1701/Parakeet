@@ -22,10 +22,14 @@ public macro Action() = #externalMacro(module: "ParakeetMacros", type: "ActionMa
 /// A protocol that defines a unit of work that can be executed asynchronously.
 public protocol Actionable: Sendable {
   /// The type of context required to execute the action.
-  associatedtype Context
+  associatedtype ActionContext
+
+  /// The type of result returned by the action.
+  associatedtype ActionResponse = Void
 
   /// Executes the action with the provided context.
   /// - Parameter context: The context containing the dependencies needed for the action.
+  /// - Returns: The result of the action.
   /// - Throws: An error if the action fails to execute.
-  func act(withContext context: Context) async throws
+  func act(withContext context: ActionContext) async throws -> ActionResponse
 }
