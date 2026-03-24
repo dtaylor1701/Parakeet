@@ -13,11 +13,11 @@ struct ParakeetTests {
     #expect(context.didAct)
   }
 
-  @Test func performActionInContext() async throws {
+  @Test func performActionInContext() async {
     let provider = TestProvider()
     let action = TestAction()
 
-    try await provider.perform(action)
+    await provider.perform(action)
     #expect(provider.context.didAct)
   }
 
@@ -29,7 +29,7 @@ struct ParakeetTests {
     #expect(provider.context.didAct)
   }
 
-  @Test func actionWithMacro() async throws {
+  @Test func actionWithMacro() async {
     let provider = TestProvider()
     let action = MacroAction(message: "Hello")
 
@@ -37,25 +37,11 @@ struct ParakeetTests {
     #expect(provider.context.lastMessage == "Hello")
   }
 
-  @Test func actionWithMacroStaticFactory() async throws {
-    let provider = TestProvider()
-
-    await provider.perform(MacroAction.macro(message: "Static"))
-    #expect(provider.context.lastMessage == "Static")
-  }
-
-  @Test func actionWithReturnValue() async throws {
+  @Test func actionWithReturnValue() async {
     let provider = TestProvider()
     let action = ReturningAction()
 
-    let result = try await provider.perform(action)
-    #expect(result == "Success")
-  }
-
-  @Test func actionWithReturnValueStaticFactory() async throws {
-    let provider = TestProvider()
-
-    let result = try await provider.perform(ReturningAction.returning())
+    let result = await provider.perform(action)
     #expect(result == "Success")
   }
 }
