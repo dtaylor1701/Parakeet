@@ -11,25 +11,6 @@ public struct ActionMacro: ExtensionMacro {
     in context: some MacroExpansionContext
   ) throws -> [ExtensionDeclSyntax] {
     
-    // Get stored properties to create the factory method
-    let properties = declaration.memberBlock.members
-      .compactMap { $0.decl.as(VariableDeclSyntax.self) }
-      .flatMap { varDecl -> [(identifier: TokenSyntax, type: TypeSyntax)] in
-        // Filter for stored properties (no accessors)
-        // Skip properties with attributes (like property wrappers)
-        guard varDecl.attributes.isEmpty else { return [] }
-        
-        return varDecl.bindings.compactMap { binding in
-          guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier,
-                let type = binding.typeAnnotation?.type else {
-            return nil
-          }
-          // Simple check for stored vs computed: if there's an accessor block, it's likely computed
-          if binding.accessorBlock != nil { return nil }
-          return (identifier, type)
-        }
-      }
-    
     // Generate the method name: MyAction -> myAction, or CreateUserAction -> createUser
     let typeName = type.trimmedDescription
     var methodName = typeName
@@ -67,22 +48,9 @@ public struct ActionMacro: ExtensionMacro {
     }
     
     // Construct the parameters and initializer arguments
-    let parameters = properties.map { "\($0.identifier): \($0.type)" }.joined(separator: ", ")
-    let arguments = properties.map { "\($0.identifier): \($0.identifier)" }.joined(separator: ", ")
-    
     var extensions: [ExtensionDeclSyntax] = []
-    
-    // Check if the type already declares ActionContext
-    let hasContext = declaration.memberBlock.members.contains { member in
-      if let typeAlias = member.decl.as(TypeAliasDeclSyntax.self),
-         typeAlias.name.text == "ActionContext" {
-        return true
-      }
-      return false
-    }
 
     // 1. Add conformance to Actionable and factory method on the type itself
-    let contextAlias = (contextType != nil && !hasContext) ? "typealias ActionContext = \(contextType!)" : ""
     extensions.append(try ExtensionDeclSyntax(
       """
       extension \(type): Actionable { }    
