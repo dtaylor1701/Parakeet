@@ -85,14 +85,9 @@ public struct ActionMacro: ExtensionMacro {
     let contextAlias = (contextType != nil && !hasContext) ? "typealias ActionContext = \(contextType!)" : ""
     extensions.append(try ExtensionDeclSyntax(
       """
-      extension \(type): Actionable {
-          \(raw: contextAlias)
-          static func \(raw: methodName)(\(raw: parameters)) -> \(type) {
-              \(type).init(\(raw: arguments))
-          }
-      }
+      extension \(type): Actionable { }    
       """))
-    
+
     return extensions
   }
 }

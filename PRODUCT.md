@@ -1,4 +1,3 @@
-I will read the `README.md` and `DESIGN.md` files to understand the project's vision and core objectives.
 # PRODUCT.md
 
 ## Product Vision

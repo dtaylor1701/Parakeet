@@ -51,3 +51,11 @@ extension ActionContextProviding where Self: ActionErrorHandlerProviding {
     }
   }
 }
+
+/// For `ActionContextProviding` conformance.
+public extension ActionContextContaining {
+  public func createActionContext() -> ActionContext
+  {
+    return actionContext
+  }
+}

@@ -33,9 +33,6 @@ import Testing
 
         extension CreateUserAction: Actionable {
             
-            static func createUser(id: UUID, name: String) -> CreateUserAction {
-                CreateUserAction.init(id: id, name: name)
-            }
         }
         """,
       macros: testMacros
@@ -55,9 +52,6 @@ import Testing
 
         extension SimpleAction: Actionable {
             
-            static func simple() -> SimpleAction {
-                SimpleAction.init()
-            }
         }
         """,
       macros: testMacros

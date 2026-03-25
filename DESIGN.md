@@ -8,7 +8,7 @@ Parakeet is a lightweight, protocol-oriented framework for Swift designed to enc
 *   **Protocol-Oriented Design**: Behavior is defined through composable protocols (`Actionable`, `ActionContextProviding`, `ActionErrorHandlerProviding`), allowing for flexible integration into existing architectures like MVVM or TCA.
 *   **Functional Results**: Actions can return results (`ActionResponse`), allowing for a more functional approach to business logic without relying on side effects in the context.
 *   **Dependency Injection (Contextual)**: Actions do not hold onto long-lived dependencies. Instead, they receive an `ActionContext` object at execution time, ensuring clean separation of concerns and easy mockability.
-*   **Macro-Driven Development**: Swift Macros are used to generate boilerplate code for action conformance and static factory methods, enabling a DSL-like syntax.
+*   **Macro-Driven Development**: Swift Macros are used to generate boilerplate code for action conformance with an eye toward future features.
 
 ## 3. High-Level Architecture
 
@@ -25,7 +25,7 @@ Parakeet is a lightweight, protocol-oriented framework for Swift designed to enc
 3.  **Performers (`ActionContextProviding`)**: Objects (usually View Models or Coordinators) that conform to this protocol. They are responsible for providing the `ActionContext` and triggering the action.
 
 ### Interaction Flow
-1.  A **Performer** (e.g., `ProfileViewModel`) identifies a need for an action (e.g., `UpdateEmailAction`).
+1.  A **Performer** (e.g., `ProfileView`) identifies a need for an action (e.g., `UpdateEmailAction`).
 2.  The Performer calls `perform(_:)`, passing the Action instance.
 3.  The framework automatically injects the `ActionContext` created by the Performer into the Action's `act(withContext:)` method.
 4.  The Action executes its logic asynchronously and returns an `ActionResponse`.
@@ -46,7 +46,6 @@ Parakeet supports two tiers of error handling:
 ### Swift Macros (`@Action`)
 The `@Action` macro automates repetitive tasks:
 *   Adding `Actionable` conformance and `ActionContext` typealias discovery.
-*   Generating a static factory method on the type that allows syntax like `perform(UserAction.fetch(id: "123"))`.
 
 ## 5. Technical Environment
 *   **Language**: Swift 6.0+ (Required for strict concurrency and latest Macros).

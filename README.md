@@ -7,8 +7,8 @@ Parakeet is a Swift library designed to decouple business logic (Actions) from t
 - **Actionable Protocol**: Define tasks as independent units that require a context for execution and can return results.
 - **Action Context Injection**: Use `ActionContextProviding` to provide the necessary dependencies to an action at runtime.
 - **Structured Error Handling**: Centralize error management using the `ActionErrorHandling` and `ActionErrorHandlerProviding` protocols.
-- **Swift Macro**: Simplify the creation of `Actionable` types with the `@Action` macro, including automatic static factory methods.
-- **SwiftUI Support**: Trigger actions directly from views with built-in error handling.
+- **Swift Macro**: Simplify the creation of `Actionable` types with the `@Action` macro.
+- **SwiftUI Support**: Trigger actions directly from views.
 
 ## Installation
 
@@ -34,7 +34,7 @@ public protocol Actionable: Sendable {
 ```
 
 ### ActionContextProviding
-The execution environment (e.g., a ViewModel or Coordinator) conforms to this protocol to provide the context required by an action.
+The execution environment (e.g., a View, ViewModel, or Coordinator) conforms to this protocol to provide the context required by an action.
 
 ```swift
 public protocol ActionContextProviding {
@@ -101,24 +101,38 @@ class UserViewModel: ActionContextProviding, ActionErrorHandlerProviding {
     
     func loadUser() {
         // Asynchronous execution with automatic error handling
-        perform(FetchUserAction.fetchUser(userId: "123")) 
+        perform(FetchUserAction(userId: "123")) 
     }
 }
 ```
 
-### 4. SwiftUI Integration
+### 4. Usage in SwiftUI
 Trigger actions directly from your SwiftUI views.
 
 ```swift
-struct MyView: View {
+struct MyView: View, ActionContextContaining, ActionErrorHandling {
     @Environment(MyActionContext.self) var context
+    
+    @State private var error: Error?
+    @State private var presentingError: Bool = false
     
     var body: some View {
         Button("Refresh") {
-            perform(FetchUserAction.fetchUser(userId: "123"), withContext: context)
+            perform(FetchUserAction(userId: "123"), withContext: context)
+        }
+        .alert("An error occurred", isPresented: $presentingError, presenting: error) { error in 
+          Button("Ok") {
+            presentingError = false
+          }
         }
     }
+    
+    func handle(_ error: Error?) {
+      self.error = error
+      presentingError = true
+    }
 }
+
 ```
 
 ## Project Structure
